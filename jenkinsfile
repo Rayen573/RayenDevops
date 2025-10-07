@@ -1,0 +1,81 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven3'       // Name of Maven tool configured in Jenkins
+        jdk 'Java17'         // Name of JDK configured in Jenkins
+    }
+
+    environment {
+        // 🔗 Your Git repository
+        GIT_REPO_URL = 'https://github.com/Rayen573/RayenDevops.git'
+
+        // 🔐 SonarQube configuration
+        SONARQUBE_SERVER = 'SonarQubeServer'           // Name of SonarQube server configured in Jenkins
+        SONARQUBE_TOKEN = credentials('sonar-token')   // Token ID stored in Jenkins credentials (Secret Text)
+
+        // 🧱 Project name in SonarQube (you can customize it)
+        SONAR_PROJECT_KEY = 'RayenDevops'
+    }
+
+    stages {
+        stage('Pull from Git') {
+            steps {
+                echo '📥 Cloning project from GitHub...'
+                git branch: 'main', url: "${GIT_REPO_URL}"
+            }
+        }
+
+        stage('Clean Project') {
+            steps {
+                echo '🧹 Cleaning project...'
+                sh 'mvn clean'
+            }
+        }
+
+        stage('Compile Project') {
+            steps {
+                echo '⚙️ Compiling project...'
+                sh 'mvn compile'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo '🔍 Running SonarQube analysis...'
+                withSonarQubeEnv("${SONARQUBE_SERVER}") {
+                    sh """
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                        -Dsonar.host.url=${env.SONAR_HOST_URL} \
+                        -Dsonar.login=${SONARQUBE_TOKEN}
+                    """
+                    echo "🔗 Check SonarQube results at: ${env.SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}"
+                }
+            }
+        }
+
+        stage('Build JAR') {
+            steps {
+                echo '📦 Building JAR package...'
+                sh 'mvn package -DskipTests'
+            }
+        }
+
+        stage('Archive Artifact') {
+            steps {
+                echo '🗃️ Archiving built JAR...'
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ CI pipeline executed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed — check Jenkins logs for details.'
+        }
+    }
+}
