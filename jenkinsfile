@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3'     // same name as configured in Jenkins
-        jdk 'Java17'       // same name as configured in Jenkins
+        maven 'M2_HOME'     // same name as configured in Jenkins
+        jdk 'JAVA_HOME'       // same name as configured in Jenkins
     }
 
     environment {
         GIT_REPO_URL = 'https://github.com/Rayen573/RayenDevops.git'
         SONARQUBE_SERVER = 'sq1'                    // matches Jenkins SonarQube name
-        SONARQUBE_TOKEN = credentials('jenkins_sonar')  // your SonarQube token ID
+        SONARQUBE_TOKEN = credentials('jenkins')  // your SonarQube token ID
         SONAR_PROJECT_KEY = 'RayenDevops'           // name in SonarQube dashboard
     }
 
